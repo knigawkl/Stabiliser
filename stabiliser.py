@@ -3,15 +3,18 @@ import logging
 import numpy as np
 import cv2
 
+from utils import Features
+
 
 class Stabiliser:
     """Video stabiliser."""
 
-    def __init__(self, logger: logging.Logger, smoothing_radius: int):
+    def __init__(self, logger: logging.Logger, smoothing_radius: int, features: str):
         self.logger = logger
         self.radius = smoothing_radius
         self.cap: cv2.VideoCapture
         self.out: cv2.VideoWriter
+        self.features = features
 
     def __del__(self):
         cv2.destroyAllWindows()
@@ -38,12 +41,35 @@ class Stabiliser:
             smoothed_trajectory[:, i] = self.moving_average(trajectory[:, i])
         return smoothed_trajectory
 
-    def fix_border(self, frame):
+    @staticmethod
+    def fix_border(frame):
         s = frame.shape
         # Scale the image 4% without moving the center
         T = cv2.getRotationMatrix2D((s[1] / 2, s[0] / 2), 0, 1.04)
         frame = cv2.warpAffine(frame, T, (s[1], s[0]))
         return frame
+
+    def get_features(self, gray):
+        # todo: test different feature descriptors (SURF, SIFT, ORB, etc.)
+        # todo: measure time of calculating feature descriptors -> a comparison slide
+        if self.features == Features.GOOD_FEATURES:
+            pts = cv2.goodFeaturesToTrack(
+                gray, maxCorners=200, qualityLevel=0.01, minDistance=30, blockSize=3)
+
+        elif self.features == Features.SURF:
+            pass
+
+        elif self.features == Features.SIFT:
+            sift = cv2.SIFT_create()
+            kps = sift.detect(gray, None)
+            key_points = []
+            for kp in kps:
+                key_points.append([[int(kp.pt[0]), int(kp.pt[1])]])
+            pts = np.array(key_points).astype('float32')
+
+        elif self.features == Features.ORB:
+            pass
+        return pts
 
     def stabilise(self, input_path: str, output_path: str):
         self.cap = cv2.VideoCapture(input_path)
@@ -75,11 +101,7 @@ class Stabiliser:
 
         for i in range(n_frames - 2):
             # Detect feature points in previous frame
-            prev_pts = cv2.goodFeaturesToTrack(prev_gray,
-                                               maxCorners=200,
-                                               qualityLevel=0.01,
-                                               minDistance=30,
-                                               blockSize=3)
+            prev_pts = self.get_features(prev_gray)
 
             # Read next frame
             success, curr = self.cap.read()
@@ -167,6 +189,6 @@ class Stabiliser:
             if frame_out.shape[1] > 1920:
                 frame_out = cv2.resize(frame_out, (frame_out.shape[1] / 2, frame_out.shape[0] / 2))
 
-            cv2.imshow("Before and After", frame_out)
+            cv2.imshow("Before (left) and After (right)", frame_out)
             cv2.waitKey(10)
             self.out.write(frame_out)

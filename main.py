@@ -2,7 +2,7 @@ import sys
 import argparse
 
 from stabiliser import Stabiliser
-from utils import setup_logger
+from utils import setup_logger, Features
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -39,6 +39,15 @@ def get_parser() -> argparse.ArgumentParser:
         default='video/out.mp4',
         help='Path to the output video.'
     )
+    parser.add_argument(
+        '--features',
+        dest='features',
+        type=str,
+        choices=list(Features),
+        required=False,
+        default=Features.GOOD_FEATURES,
+        help='Keypoint detector type.'
+    )
     return parser
 
 
@@ -49,7 +58,9 @@ if __name__ == '__main__':
     Stabiliser(
         logger=setup_logger(),
         smoothing_radius=args.smoothing_radius,
-    ).stabilise(
-        input_path=args.input_path,
+        features=args.features
+    ).stabilise(  # todo: test on different videos
+        input_path=args.input_path,  # todo: get better results on the piano video
         output_path=args.output_path
     )
+    # todo: compare our method with smartphone stabilisation or any application (Google Photos?)

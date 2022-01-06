@@ -1,5 +1,6 @@
 import logging
 import sys
+from enum import Enum
 
 
 def setup_logger(verbosity: int = 0) -> logging.Logger:
@@ -16,3 +17,21 @@ def setup_logger(verbosity: int = 0) -> logging.Logger:
         level=verbosity, stream=sys.stdout, format=logformat, datefmt='%Y-%m-%d %H:%M:%S')
     logging.captureWarnings(capture=True)
     return logging.getLogger('Stabiliser')
+
+
+class Enumeration(Enum):
+    def __str__(self) -> str:
+        """Overrides __str__ to simplify comparisons.
+
+        Returns:
+            current value as string.
+        """
+        return self.value
+
+
+class Features(str, Enumeration):
+    """Holds supported modes."""
+    GOOD_FEATURES = 'good_features'
+    ORB = 'orb'
+    SIFT = 'sift'
+    SURF = 'surf'
