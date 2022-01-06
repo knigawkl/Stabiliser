@@ -24,14 +24,15 @@ class Enumeration(Enum):
         """Overrides __str__ to simplify comparisons.
 
         Returns:
-            current value as string.
+            Current value as string.
         """
         return self.value
 
 
 class Features(str, Enumeration):
-    """Holds supported modes."""
+    """Holds supported feature description modes."""
     GOOD_FEATURES = 'good_features'
     ORB = 'orb'
     SIFT = 'sift'
     SURF = 'surf'
+    AKAZE = 'akaze'

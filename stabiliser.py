@@ -68,7 +68,21 @@ class Stabiliser:
             pts = np.array(key_points).astype('float32')
 
         elif self.features == Features.ORB:
-            pass
+            orb = cv2.ORB_create()
+            kps, _ = orb.detectAndCompute(gray, None)
+            key_points = []
+            for kp in kps:
+                key_points.append([[int(kp.pt[0]), int(kp.pt[1])]])
+            pts = np.array(key_points).astype('float32')
+
+        elif self.features == Features.AKAZE:
+            akaze = cv2.AKAZE_create()
+            kps, _ = akaze.detectAndCompute(gray, None)
+            key_points = []
+            for kp in kps:
+                key_points.append([[int(kp.pt[0]), int(kp.pt[1])]])
+            pts = np.array(key_points).astype('float32')
+
         return pts
 
     def stabilise(self, input_path: str, output_path: str):
