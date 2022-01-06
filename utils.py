@@ -36,3 +36,4 @@ class Features(str, Enumeration):
     SIFT = 'sift'
     SURF = 'surf'
     AKAZE = 'akaze'
+    FAST = 'fast'

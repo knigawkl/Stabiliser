@@ -49,41 +49,45 @@ class Stabiliser:
         frame = cv2.warpAffine(frame, T, (s[1], s[0]))
         return frame
 
+    @staticmethod
+    def convert_cv_kps_to_np(kps):
+        """Converts tuples of KeyPoints to ndarrays."""
+        key_points = []
+        for kp in kps:
+            key_points.append([[int(kp.pt[0]), int(kp.pt[1])]])
+        return np.array(key_points).astype('float32')
+
     def get_features(self, gray):
         # todo: test different feature descriptors (SURF, SIFT, ORB, etc.)
         # todo: measure time of calculating feature descriptors -> a comparison slide
+        # todo: is there any difference between faster and slower descriptors?
+        #       if not -> recommend using faster ones
         if self.features == Features.GOOD_FEATURES:
             pts = cv2.goodFeaturesToTrack(
                 gray, maxCorners=200, qualityLevel=0.01, minDistance=30, blockSize=3)
+            return pts
 
         elif self.features == Features.SURF:
-            pass
+            # todo: I had trouble implementing it, a game not worth the candle probably
+            raise NotImplementedError
 
         elif self.features == Features.SIFT:
             sift = cv2.SIFT_create()
             kps = sift.detect(gray, None)
-            key_points = []
-            for kp in kps:
-                key_points.append([[int(kp.pt[0]), int(kp.pt[1])]])
-            pts = np.array(key_points).astype('float32')
 
         elif self.features == Features.ORB:
             orb = cv2.ORB_create()
             kps, _ = orb.detectAndCompute(gray, None)
-            key_points = []
-            for kp in kps:
-                key_points.append([[int(kp.pt[0]), int(kp.pt[1])]])
-            pts = np.array(key_points).astype('float32')
 
         elif self.features == Features.AKAZE:
             akaze = cv2.AKAZE_create()
             kps, _ = akaze.detectAndCompute(gray, None)
-            key_points = []
-            for kp in kps:
-                key_points.append([[int(kp.pt[0]), int(kp.pt[1])]])
-            pts = np.array(key_points).astype('float32')
 
-        return pts
+        elif self.features == Features.FAST:
+            fast = cv2.FastFeatureDetector_create()
+            kps = fast.detect(gray, None)
+
+        return self.convert_cv_kps_to_np(kps)
 
     def stabilise(self, input_path: str, output_path: str):
         self.cap = cv2.VideoCapture(input_path)
