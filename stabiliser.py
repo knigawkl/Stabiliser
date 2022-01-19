@@ -1,4 +1,6 @@
 import logging
+import time
+from statistics import mean
 
 import numpy as np
 import cv2
@@ -15,8 +17,10 @@ class Stabiliser:
         self.cap: cv2.VideoCapture
         self.out: cv2.VideoWriter
         self.features = features
+        self.feature_detection_times = []
 
     def __del__(self):
+        self.logger.info(f'Average feature detection time: {mean(self.feature_detection_times)}')
         cv2.destroyAllWindows()
         self.cap.release()
         self.out.release()
@@ -62,10 +66,12 @@ class Stabiliser:
         # todo: measure time of calculating feature descriptors -> a comparison slide
         # todo: is there any difference between faster and slower descriptors?
         #       if not -> recommend using faster ones
+
+        start = time.time()
+
         if self.features == Features.GOOD_FEATURES:
-            pts = cv2.goodFeaturesToTrack(
+            kps = cv2.goodFeaturesToTrack(
                 gray, maxCorners=200, qualityLevel=0.01, minDistance=30, blockSize=3)
-            return pts
 
         elif self.features == Features.SURF:
             # todo: I had trouble implementing it, a game not worth the candle probably
@@ -87,7 +93,12 @@ class Stabiliser:
             fast = cv2.FastFeatureDetector_create()
             kps = fast.detect(gray, None)
 
-        return self.convert_cv_kps_to_np(kps)
+        end = time.time()
+        elapsed_time = end - start
+        self.logger.info(f'Detecting features took {elapsed_time} seconds.')
+        self.feature_detection_times.append(elapsed_time)
+
+        return kps if self.features == Features.GOOD_FEATURES else self.convert_cv_kps_to_np(kps)
 
     def stabilise(self, input_path: str, output_path: str):
         self.cap = cv2.VideoCapture(input_path)
