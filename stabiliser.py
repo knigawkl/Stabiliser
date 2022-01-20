@@ -18,9 +18,11 @@ class Stabiliser:
         self.out: cv2.VideoWriter
         self.features = features
         self.feature_detection_times = []
+        self.feature_detection_kp_counts = []
 
     def __del__(self):
         self.logger.info(f'Average feature detection time: {mean(self.feature_detection_times)}')
+        self.logger.info(f'Average number of features: {mean(self.feature_detection_kp_counts)}')
         cv2.destroyAllWindows()
         self.cap.release()
         self.out.release()
@@ -62,11 +64,6 @@ class Stabiliser:
         return np.array(key_points).astype('float32')
 
     def get_features(self, gray):
-        # todo: test different feature descriptors (SURF, SIFT, ORB, etc.)
-        # todo: measure time of calculating feature descriptors -> a comparison slide
-        # todo: is there any difference between faster and slower descriptors?
-        #       if not -> recommend using faster ones
-
         start = time.time()
 
         if self.features == Features.GOOD_FEATURES:
@@ -97,6 +94,7 @@ class Stabiliser:
         elapsed_time = end - start
         self.logger.info(f'Detecting features took {elapsed_time} seconds.')
         self.feature_detection_times.append(elapsed_time)
+        self.feature_detection_kp_counts.append(len(kps))
 
         return kps if self.features == Features.GOOD_FEATURES else self.convert_cv_kps_to_np(kps)
 
