@@ -90,6 +90,10 @@ class Stabiliser:
             fast = cv2.FastFeatureDetector_create()
             kps = fast.detect(gray, None)
 
+        elif self.features == Features.MSER:
+            mser = cv2.MSER_create()
+            kps = mser.detect(gray, None)
+
         end = time.time()
         elapsed_time = end - start
         self.logger.info(f'Detecting features took {elapsed_time} seconds.')
