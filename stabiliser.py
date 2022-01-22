@@ -94,6 +94,10 @@ class Stabiliser:
             mser = cv2.MSER_create()
             kps = mser.detect(gray, None)
 
+        elif self.features == Features.BRISK:
+            mser = cv2.BRISK_create()
+            kps = mser.detect(gray, None)
+
         end = time.time()
         elapsed_time = end - start
         self.logger.info(f'Detecting features took {elapsed_time} seconds.')
