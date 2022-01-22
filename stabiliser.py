@@ -112,7 +112,7 @@ class Stabiliser:
         fps = self.cap.get(cv2.CAP_PROP_FPS)
 
         # Define the codec for output video
-        fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+        fourcc = cv2.VideoWriter_fourcc(*'MP4V')
 
         # Set up output video
         self.out = cv2.VideoWriter(output_path, fourcc, fps, (2 * w, h))
