@@ -86,6 +86,10 @@ class Stabiliser:
             akaze = cv2.AKAZE_create()
             kps, _ = akaze.detectAndCompute(gray, None)
 
+        elif self.features == Features.KAZE:
+            akaze = cv2.KAZE_create()
+            kps, _ = akaze.detectAndCompute(gray, None)
+
         elif self.features == Features.FAST:
             fast = cv2.FastFeatureDetector_create()
             kps = fast.detect(gray, None)

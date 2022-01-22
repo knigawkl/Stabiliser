@@ -4,15 +4,17 @@ A simple video stabiliser written in Python/OpenCV.
 Based on https://learnopencv.com/video-stabilization-using-point-feature-matching-in-opencv/.
 
 ### Average feature detection times / average number of features found
-FAST -- 0.0013s / 2359.8
+FAST -- 0.0013 / 2359.8
 
-AKAZE -- 0.0511s / 839.1
+AKAZE -- 0.0511 / 839.1
 
-ORB -- 0.0079s / 500
+KAZE -- 0.1832 / 1032.4
+
+ORB -- 0.0079 / 500
 
 GOOD_FEATURES -- 0.0064s / 110.7
 
-SIFT -- 0.0662s / 1151.4
+SIFT -- 0.0662 / 1151.4
 
 MSER -- 0.0532 / 339.5
 
