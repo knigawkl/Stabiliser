@@ -40,3 +40,9 @@ class Features(str, Enumeration):
     FAST = 'fast'
     MSER = 'mser'
     BRISK = 'brisk'
+
+
+class Modes(str, Enumeration):
+    """Hold supported tracking modes."""
+    OPTICAL_FLOW = 'optical_flow'
+    HOMOGRAPHY = 'homography'

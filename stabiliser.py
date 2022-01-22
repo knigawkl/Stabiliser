@@ -5,13 +5,14 @@ from statistics import mean
 import numpy as np
 import cv2
 
-from utils import Features
+from utils import Features, Modes
 
 
 class Stabiliser:
     """Video stabiliser."""
 
-    def __init__(self, logger: logging.Logger, smoothing_radius: int, features: str):
+    def __init__(self, mode: str, logger: logging.Logger, smoothing_radius: int, features: str):
+        self.mode = mode
         self.logger = logger
         self.radius = smoothing_radius
         self.cap: cv2.VideoCapture
@@ -110,6 +111,30 @@ class Stabiliser:
 
         return kps if self.features == Features.GOOD_FEATURES else self.convert_cv_kps_to_np(kps)
 
+    def extract_sift_features(self, img1, img2):
+        # Initiate SIFT detector
+        sift = cv2.SIFT_create()
+
+        # find the keypoints and descriptors with SIFT
+        kp1, des1 = sift.detectAndCompute(img1, None)
+
+        kp2, des2 = sift.detectAndCompute(img2, None)
+
+        FLANN_INDEX_KDTREE = 0
+        index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+        search_params = dict(checks=50)
+
+        flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+        matches = flann.knnMatch(des1, des2, k=2)
+
+        # store all the good matches as per Lowe's ratio test.
+        good = []
+        for m, n in matches:
+            if m.distance < 0.7 * n.distance:
+                good.append(m)
+        return good, kp1, kp2
+
     def stabilise(self, input_path: str, output_path: str):
         self.cap = cv2.VideoCapture(input_path)
 
@@ -139,30 +164,38 @@ class Stabiliser:
         transforms = np.zeros((n_frames - 1, 3), np.float32)
 
         for i in range(n_frames - 2):
-            # Detect feature points in previous frame
-            prev_pts = self.get_features(prev_gray)
-
             # Read next frame
             success, curr = self.cap.read()
             if not success:
                 break
 
-                # Convert to grayscale
+            # Convert to grayscale
             curr_gray = cv2.cvtColor(curr, cv2.COLOR_BGR2GRAY)
 
-            # Calculate optical flow (i.e. track feature points)
-            curr_pts, status, err = cv2.calcOpticalFlowPyrLK(prev_gray, curr_gray, prev_pts, None)
+            if self.mode == Modes.HOMOGRAPHY:
+                good, kp1, kp2 = self.extract_sift_features(prev_gray, curr_gray)
+
+                prev_pts = np.float32([kp1[m.queryIdx].pt for m in good]).reshape(-1, 1, 2)
+                curr_pts = np.float32([kp2[m.trainIdx].pt for m in good]).reshape(-1, 1, 2)
+
+                m, mask = cv2.findHomography(prev_pts, curr_pts, cv2.RANSAC, 5.0)
+            elif self.mode == Modes.OPTICAL_FLOW:
+                # Detect feature points in previous frame
+                prev_pts = self.get_features(prev_gray)
+                # Calculate optical flow (i.e. track feature points)
+                curr_pts, status, _ = cv2.calcOpticalFlowPyrLK(prev_gray, curr_gray, prev_pts, None)
 
             # Sanity check
             assert prev_pts.shape == curr_pts.shape
 
-            # Filter only valid points
-            idx = np.where(status == 1)[0]
-            prev_pts = prev_pts[idx]
-            curr_pts = curr_pts[idx]
+            if self.mode == Modes.OPTICAL_FLOW:
+                # Filter only valid points
+                idx = np.where(status == 1)[0]
+                prev_pts = prev_pts[idx]
+                curr_pts = curr_pts[idx]
 
-            # Find transformation matrix
-            m = cv2.estimateRigidTransform(prev_pts, curr_pts, fullAffine=False)
+                # Find transformation matrix
+                m = cv2.estimateRigidTransform(prev_pts, curr_pts, fullAffine=False)
 
             # Extract traslation
             dx = m[0, 2]
